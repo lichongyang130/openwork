@@ -1,6 +1,6 @@
 {
   "name": "openwork",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "workspaces": ["apps/*"],
@@ -8,6 +8,12 @@
     "build": "npm --workspace @openwork/web run build",
     "start": "node apps/server/src/index.js",
     "dev:server": "node apps/server/src/index.js",
-    "dev:web": "npm --workspace @openwork/web run dev"
+    "dev:web": "npm --workspace @openwork/web run dev",
+    "electron": "electron electron/main.js",
+    "electron:build": "electron-builder --win --mac --linux"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.9.1"
   }
 }

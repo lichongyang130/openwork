@@ -86,6 +86,43 @@ export default function EventCard({ ev, task, onPreview }) {
         </div>
       );
 
+    case 'swarm_start':
+      return (
+        <div className="ev-plan" style={{ borderColor: '#f0e6b8', background: '#fffbe6' }}>
+          <div className="t">🐝 蜂群启动 · {p.total}只工蜂并行</div>
+          <ol>{(p.subtasks || []).map((s, i) => <li key={i}>{s.title} ({s.role})</li>)}</ol>
+        </div>
+      );
+    case 'swarm_bee_start':
+      return (
+        <div className="ev ev-think">
+          <div className="ic" style={{ background: '#fff3c0' }}>🐝</div>
+          <div className="body">工蜂 {p.title || p.subtaskId} 开始执行 · {p.role}</div>
+        </div>
+      );
+    case 'swarm_pollen':
+      return (
+        <div className="ev ev-think">
+          <div className="ic" style={{ background: '#e8f5e9', color: '#27a35f' }}>🧬</div>
+          <div className="body">花粉入库：{p.pollen?.claim} · 置信度 {(p.pollen?.confidence * 100).toFixed(0)}% · GDI {p.pollen?.gdi}</div>
+        </div>
+      );
+    case 'swarm_bee_done':
+      return (
+        <div className="ev ev-think">
+          <div className="ic" style={{ background: '#e2f5ea', color: '#27a35f' }}><IcCheck size={13} /></div>
+          <div className="body">工蜂完成 · 置信度 {(p.confidence * 100).toFixed(0)}% · GDI {p.gdi}</div>
+        </div>
+      );
+    case 'swarm_gene':
+      return (
+        <div className="ev-approval" style={{ borderColor: '#d8c8f0', background: '#f6f0ff' }}>
+          <div className="t">🧬 Gene自进化 · 沉淀 {p.count} 条</div>
+          <div className="d">{(p.genes || []).map(g => g.claim).join('；')}</div>
+          <div className="done-tag">越用越聪明，下次同类型快50%</div>
+        </div>
+      );
+
     case 'error':
       return <div className="ev-error">⚠ {p.message}</div>;
 

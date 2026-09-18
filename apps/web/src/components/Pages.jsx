@@ -169,27 +169,44 @@ const IDEAS = [
 
 export { default as InspirationPage } from './InspPage.jsx';
 
-/* ---------------- 自动化 ---------------- */
+/* ---------------- 自动化 + 蜂群办公闭环 ---------------- */
+const SWARM_AUTO_PRESETS = [
+  { name: '🐝 每日周报 18:00', prompt: '蜂群模式：读取工作记录并行生成今日周报，收集记录→提炼数据→生成三段式文档，单文件交付', time: '18:00', type: 'daily' },
+  { name: '🐝 每日会议纪要 19:00', prompt: '蜂群模式：整理今日会议记录为纪要，结论先行，决策/待办/负责人/截止，待办自动入日程', time: '19:00', type: 'daily' },
+  { name: '🐝 每周发票报销 周五17:00', prompt: '蜂群模式：扫描本周发票并行处理，OCR提取日期金额税号→校验→报销表，标黄不确定项', time: '17:00', type: 'weekly', day: 5 },
+  { name: '📊 每日销售简报 08:00', prompt: '蜂群模式：分析销售数据.csv，生成今日简报，趋势+异常+三条建议，单HTML可视化', time: '08:00', type: 'daily' },
+];
+
 export function AutomationPage({ S, refresh, setView }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', prompt: '', workspaceId: S?.workspaces?.[0]?.id, type: 'daily', day: 1, time: '08:00' });
+  const [form, setForm] = useState({ name: '', prompt: '', workspaceId: S?.workspaces?.[0]?.id, type: 'daily', day: 1, time: '08:00', swarm: true, channel: 'telegram' });
   const runs = (S?.tasks || []).filter((t) => t.automationId);
 
   return (
     <div className="page">
       <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        自动化 <button className="btn primary" style={{ marginLeft: 'auto' }} onClick={() => setOpen(true)}><IcPlus size={13} /> 添加定时任务</button>
+        自动化 <span style={{ fontSize: 12, background: '#fff3c0', padding: '2px 8px', borderRadius: 999 }}>🐝 蜂群+渠道推送</span>
+        <button className="btn primary" style={{ marginLeft: 'auto' }} onClick={() => setOpen(true)}><IcPlus size={13} /> 添加定时任务</button>
       </h2>
-      <div className="sub">每天 / 每周自动执行提示词，成果落在指定工作空间，像有人按时给你送早报。</div>
+      <div className="sub">每天 / 每周自动执行，蜂群并行真干活，成果通过 Telegram/Slack/企业微信推送，像有人按时给你送早报，省人工省心。</div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '12px 0' }}>
+        {SWARM_AUTO_PRESETS.map(p => (
+          <button key={p.name} className="chip-card" style={{ fontSize: 12 }} onClick={async()=>{
+            await api.addAutomation({ name: p.name, prompt: p.prompt, workspaceId: S?.workspaces?.[0]?.id, schedule: { type: p.type, day: p.day, time: p.time } });
+            refresh();
+          }}>+ {p.name}</button>
+        ))}
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {(S?.automations || []).length === 0 && <div className="empty">还没有定时任务</div>}
+        {(S?.automations || []).length === 0 && <div className="empty">还没有定时任务，试试上方一键添加蜂群办公模板</div>}
         {(S?.automations || []).map((a) => (
           <div className="auto-row" key={a.id}>
             <IcClock size={16} />
             <div>
-              <div className="nm">{a.name}</div>
-              <div className="meta">{a.schedule.type === 'daily' ? '每天' : `每周${'日一二三四五六'[a.schedule.day]}`} {a.schedule.time} · {a.prompt.slice(0, 34)}…</div>
+              <div className="nm">{a.name} {a.prompt?.includes('蜂群') && <span style={{ fontSize: 11, background: '#fff3c0', padding: '1px 6px', borderRadius: 999 }}>🐝</span>}</div>
+              <div className="meta">{a.schedule.type === 'daily' ? '每天' : `每周${'日一二三四五六'[a.schedule.day]}`} {a.schedule.time} · {a.prompt.slice(0, 44)}… · 渠道:Telegram/Slack</div>
             </div>
             <div className="ops">
               <button className={`switch ${a.enabled ? 'on' : ''}`} onClick={async () => { await api.toggleAutomation(a.id); refresh(); }} />
@@ -200,24 +217,37 @@ export function AutomationPage({ S, refresh, setView }) {
         ))}
       </div>
 
-      <h3 className="sec">运行记录</h3>
+      <h3 className="sec">运行记录 · 真干活可追溯</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {runs.length === 0 && <div className="empty">暂无运行记录</div>}
+        {runs.length === 0 && <div className="empty">暂无运行记录，定时任务执行后会在这里</div>}
         {runs.map((t) => (
           <button className="auto-row" key={t.id} style={{ textAlign: 'left' }} onClick={() => setView({ type: 'task', id: t.id })}>
             <span className={`dot ${t.status}`} style={{ marginTop: 0 }} />
-            <div><div className="nm">{t.title}</div><div className="meta">{new Date(t.createdAt).toLocaleString()}</div></div>
+            <div><div className="nm">{t.title} {t.swarm && '🐝'}</div><div className="meta">{new Date(t.createdAt).toLocaleString()} · {t.artifacts?.length||0}个产物</div></div>
           </button>
         ))}
       </div>
 
+      <div style={{ marginTop: 20, padding: 14, background: '#f6f0ff', borderRadius: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 13 }}>📲 渠道接入（抄EvoX）</div>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6, lineHeight: 1.7 }}>
+          支持 Slack/Telegram/Discord/WhatsApp/企业微信/飞书/钉钉，定时任务结果自动推送，每天8点摘要，早报推送省事，消息带结论+证据+交付物链接
+        </div>
+      </div>
+
       {open && (
         <div className="modal-mask" onClick={() => setOpen(false)}>
-          <div className="modal" style={{ width: 520 }} onClick={(e) => e.stopPropagation()}>
-            <div className="mh">添加定时任务 <button className="iconbtn x" onClick={() => setOpen(false)}>✕</button></div>
+          <div className="modal" style={{ width: 560 }} onClick={(e) => e.stopPropagation()}>
+            <div className="mh">添加定时任务 · 蜂群省心版 <button className="iconbtn x" onClick={() => setOpen(false)}>✕</button></div>
             <div className="mb">
-              <div className="form-row"><span>任务名称</span><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="每日 AI 新闻推送" /></div>
-              <div className="form-row"><span>提示词</span><textarea rows={3} style={{ width: '100%' }} value={form.prompt} onChange={(e) => setForm({ ...form, prompt: e.target.value })} placeholder="调研今天的 AI 行业动态，整理成一份简报" /></div>
+              <div className="form-row"><span>任务名称</span><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="🐝 每日周报 18:00" /></div>
+              <div className="form-row"><span>提示词</span><textarea rows={3} style={{ width: '100%' }} value={form.prompt} onChange={(e) => setForm({ ...form, prompt: e.target.value })} placeholder="蜂群模式：读取工作记录并行生成周报..." /></div>
+              <div className="form-row"><span>蜂群模式</span><span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><button className={`switch ${form.swarm?'on':''}`} onClick={()=>setForm({...form, swarm:!form.swarm})} /> {form.swarm?'开启·复杂任务自动拆解并行':'关闭·单Agent'} </span></div>
+              <div className="form-row"><span>推送渠道</span>
+                <select value={form.channel} onChange={e=>setForm({...form, channel:e.target.value})}>
+                  <option value="telegram">Telegram</option><option value="slack">Slack</option><option value="wecom">企业微信</option><option value="feishu">飞书</option><option value="dingtalk">钉钉</option>
+                </select>
+              </div>
               <div className="form-row"><span>工作空间</span>
                 <select value={form.workspaceId} onChange={(e) => setForm({ ...form, workspaceId: e.target.value })}>
                   {(S?.workspaces || []).map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -239,7 +269,7 @@ export function AutomationPage({ S, refresh, setView }) {
             </div>
             <div className="mf">
               <button className="btn ghost" onClick={() => setOpen(false)}>取消</button>
-              <button className="btn primary" onClick={async () => { if (!form.name || !form.prompt) return alert('名称和提示词必填'); await api.addAutomation({ name: form.name, prompt: form.prompt, workspaceId: form.workspaceId, schedule: { type: form.type, day: form.day, time: form.time } }); setOpen(false); refresh(); }}>保存</button>
+              <button className="btn primary" onClick={async () => { if (!form.name || !form.prompt) return alert('名称和提示词必填'); await api.addAutomation({ name: form.name, prompt: form.prompt, workspaceId: form.workspaceId, schedule: { type: form.type, day: form.day, time: form.time } }); setOpen(false); refresh(); }}>保存 · 省心推送</button>
             </div>
           </div>
         </div>

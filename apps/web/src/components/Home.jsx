@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import InputCard from './InputCard.jsx';
 import { api } from '../api.js';
 import { SUBS } from './SubData.js';
@@ -49,6 +49,47 @@ const SCENES = [
   },
 ];
 
+function BrainCockpit({ setView }) {
+  const [cp, setCp] = useState(null);
+  useEffect(()=>{ api.brainCockpit().then(setCp).catch(()=>{}); }, []);
+  if (!cp) return null;
+  return (
+    <div style={{ margin: '16px 0 20px', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
+      <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>📁 进行中项目 <span style={{ fontWeight: 400, color: 'var(--muted)', marginLeft: 6 }}>{cp.projects?.length||0}个</span></div>
+        {(cp.projects||[]).slice(0,2).map(p=>(
+          <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <div style={{ flex: 1, height: 6, background: '#eee', borderRadius: 999, overflow: 'hidden' }}><div style={{ width: `${p.progress||0}%`, height: '100%', background: '#6aa7ff' }} /></div>
+            <span style={{ fontSize: 11.5 }}>{p.name} {p.progress||0}%</span>
+          </div>
+        ))}
+        {(!cp.projects||cp.projects.length===0) && <div style={{ fontSize: 11, color: 'var(--muted)' }}>暂无项目记忆，去做个任务就会自动记录</div>}
+      </div>
+      <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>🐝 蜂群</div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div><div style={{ fontSize: 18, fontWeight: 800 }}>{cp.swarm?.running||0}</div><div style={{ fontSize: 10, color: 'var(--muted)' }}>工作中</div></div>
+          <div><div style={{ fontSize: 18, fontWeight: 800 }}>{cp.swarm?.total||0}</div><div style={{ fontSize: 10, color: 'var(--muted)' }}>总任务</div></div>
+          <div><div style={{ fontSize: 18, fontWeight: 800 }}>{cp.swarm?.doneToday||0}</div><div style={{ fontSize: 10, color: 'var(--muted)' }}>今日完成</div></div>
+        </div>
+        {cp.discovery && <div style={{ marginTop: 8, fontSize: 11, background: '#fff8e1', padding: '6px 8px', borderRadius: 8, lineHeight: 1.4 }}>{cp.discovery}</div>}
+      </div>
+      <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+          <span>🧠 最近记忆</span>
+          <button className="link-gray" style={{ fontSize: 11 }} onClick={()=>setView({ type: 'brain' })}>查看全部 ›</button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {(cp.memories||[]).slice(0,3).map(m=>(
+            <div key={m.id} style={{ fontSize: 11, background: '#fafaf8', padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>• {m.summary}</div>
+          ))}
+          {(!cp.memories||cp.memories.length===0) && <div style={{ fontSize: 11, color: 'var(--muted)' }}>暂无记忆</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home({ S, setView, refresh }) {
   const [scene, setScene] = useState('office');
   const [sel, setSel] = useState(null);
@@ -82,7 +123,9 @@ export default function Home({ S, setView, refresh }) {
   return (
     <div className="home">
       <div className="home-inner">
-        <div className="hero">OpenWork, 我帮你</div>
+        <div className="hero">OpenWork, 我帮你 <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--muted)', marginLeft: 10 }}>🧠 第二大脑已就绪 · 越用越懂你</span></div>
+
+        <BrainCockpit setView={setView} />
 
         <div className="scene-tabs">
           {SCENES.map((s) => (
@@ -173,8 +216,7 @@ export default function Home({ S, setView, refresh }) {
               onMake={() => { setCaseOpen(null); submit({ prompt: meta.prompt, mode: 'craft', workspaceId: S.workspaces[0]?.id, skillIds: [], skillName: chipName }); }}
             />
           );
-        })()}/>
-      )}
+        })()}
     </div>
   );
 }

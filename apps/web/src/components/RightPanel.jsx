@@ -11,12 +11,18 @@ const isText = (name) => TEXT_EXT.has((name.split('.').pop() || '').toLowerCase(
 export default function RightPanel({ task }) {
   const [tab, setTab] = useState('artifacts');
   const [files, setFiles] = useState(null);
+  const [mems, setMems] = useState(null);
+  const [ctxPkg, setCtxPkg] = useState(null);
   const [onPreview, setOnPreview] = useState(null);
   const [editPath, setEditPath] = useState(null);
 
   const ws = task._ws;
   useEffect(() => {
     if (tab === 'files' && ws) api.wsFiles(ws.id).then(setFiles).catch(() => setFiles([]));
+    if (tab === 'memory' && task) {
+      api.searchMemories(task.title||task.prompt||'', { projectId: task.workspaceId, topK: 8 }).then(setMems).catch(()=>setMems([]));
+      api.contextPackage(task.prompt||task.title||'', task.workspaceId).then(setCtxPkg).catch(()=>{});
+    }
   }, [tab, ws?.id, task.events.length]);
 
   const changes = (task.events || []).filter((e) => e.kind === 'tool' && e.payload.status !== 'running' && /移动|删除|创建|写入|删除文件/.test(e.payload.label || ''));
@@ -25,8 +31,9 @@ export default function RightPanel({ task }) {
     <aside className="panel">
       <div className="panel-tabs">
         <button className={tab === 'artifacts' ? 'on' : ''} onClick={() => setTab('artifacts')}>产物 {task.artifacts?.length || ''}</button>
-        <button className={tab === 'files' ? 'on' : ''} onClick={() => setTab('files')}>工作空间文件</button>
-        <button className={tab === 'changes' ? 'on' : ''} onClick={() => setTab('changes')}>变更记录</button>
+        <button className={tab === 'memory' ? 'on' : ''} onClick={() => setTab('memory')}>🧠 记忆</button>
+        <button className={tab === 'files' ? 'on' : ''} onClick={() => setTab('files')}>文件</button>
+        <button className={tab === 'changes' ? 'on' : ''} onClick={() => setTab('changes')}>变更</button>
       </div>
       <div className="panel-body">
         {tab === 'artifacts' && (
@@ -62,6 +69,28 @@ export default function RightPanel({ task }) {
               >
                 {f.isDir ? <IcFolder size={13} /> : <IcFile size={13} />} {f.name}
                 {!f.isDir && <span style={{ marginLeft: 'auto', fontSize: 11 }}>{fmtBytes(f.size)}</span>}
+              </div>
+            ))}
+          </>
+        )}
+
+        {tab === 'memory' && (
+          <>
+            {mems===null && <div className="empty">加载记忆中…</div>}
+            {mems && mems.length===0 && <div className="empty">暂无相关记忆<br/>第二大脑会在任务中自动检索</div>}
+            {ctxPkg && (
+              <div style={{ padding: 10, background: '#f6f0ff', borderRadius: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6 }}>🔍 上下文引擎 · 已注入</div>
+                <div style={{ fontSize: 10.5, color: 'var(--muted)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{ctxPkg.promptInjection?.slice(0,400)||'无'}</div>
+              </div>
+            )}
+            {(mems||[]).map(m=>(
+              <div key={m.id} style={{ padding: '8px 10px', borderLeft: `2px solid ${m.type==='decision'?'#6aa7ff': m.type==='experience'?'#f0b45c':'#ccc'}`, background: '#fff', borderRadius: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{m.type==='decision'?'📌':m.type==='experience'?'💡':'🧠'} {m.type} {m._score ? Math.round(m._score*100)+'%' : ''}</span>
+                  <span style={{ color: 'var(--muted)', fontWeight: 400 }}>{Math.round((m.importance||0)*100)}%</span>
+                </div>
+                <div style={{ fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>{m.content.slice(0,120)}</div>
               </div>
             ))}
           </>

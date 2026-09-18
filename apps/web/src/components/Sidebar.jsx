@@ -5,6 +5,7 @@ import { IcPlusC, IcRobot, IcSpeaker, IcUsers, IcClock, IcGrid, IcSearch, IcFilt
 
 const NAV = [
   { id: 'home', name: '做一做', icon: IcDo },
+  { id: 'brain', name: '🧠 第二大脑', icon: IcSpark },
   { id: 'dashboard', name: '📊 数据看板', icon: IcGrid },
   { id: 'gene-market', name: '🧬 Gene记忆', icon: IcSpark },
   { id: 'assistant', name: '远程指令', icon: IcRemote },
@@ -13,7 +14,6 @@ const NAV = [
   { id: 'automation', name: '定时任务', icon: IcTimer },
   { id: 'library', name: '资料库', icon: IcLib },
   { id: 'inspiration', name: '灵感', icon: IcIdea },
-  // 蜂群实验室已按需求完全去掉
 ];
 
 const FILTERS = [['', '全部任务'], ['running', '进行中'], ['planning', '规划中'], ['waiting', '待确认'], ['done', '已完成'], ['failed', '失败']];
