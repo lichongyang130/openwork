@@ -81,6 +81,13 @@ import { DEEP_README_3 } from './deep/readme3.js';
 import { DEEP_README_4 } from './deep/readme4.js';
 import { DEEP_README_5 } from './deep/readme5.js';
 import { DEEP_README_6 } from './deep/readme6.js';
+import { DEEP_SCRIPT_1 } from './deep/script1.js';
+import { DEEP_SCRIPT_2 } from './deep/script2.js';
+import { DEEP_SCRIPT_3 } from './deep/script3.js';
+import { DEEP_SCRIPT_4 } from './deep/script4.js';
+import { DEEP_SCRIPT_5 } from './deep/script5.js';
+import { DEEP_SCRIPT_6 } from './deep/script6.js';
+
 
 
 
@@ -161,6 +168,13 @@ DEEP_README_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:生成 READM
 DEEP_README_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
 DEEP_README_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
 DEEP_README_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
+DEEP_SCRIPT_1.forEach((c, j) => { const idx = j + 0; if (ALL['code:脚本自动化'][idx]) ALL['code:脚本自动化'][idx] = c; });
+DEEP_SCRIPT_2.forEach((c, j) => { const idx = j + 5; if (ALL['code:脚本自动化'][idx]) ALL['code:脚本自动化'][idx] = c; });
+DEEP_SCRIPT_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:脚本自动化'][idx]) ALL['code:脚本自动化'][idx] = c; });
+DEEP_SCRIPT_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:脚本自动化'][idx]) ALL['code:脚本自动化'][idx] = c; });
+DEEP_SCRIPT_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:脚本自动化'][idx]) ALL['code:脚本自动化'][idx] = c; });
+DEEP_SCRIPT_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:脚本自动化'][idx]) ALL['code:脚本自动化'][idx] = c; });
+
 
 
 
