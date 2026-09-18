@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { IcPlus, IcArrowUp, IcMic, IcGauge, IcShield, IcFolder, IcChevD, IcChevR, IcClip, IcAt, IcEdit, IcUsers, IcBolt, IcPlug, IcStop, IcX, IcScale, IcGem, IcCheck, IcSpark } from '../icons.jsx';
-import SwarmToggle from './SwarmToggle.jsx';
 
 const TIERS = [
   { id: 'fast', name: '快速', icon: IcBolt, x: '0.21x' },
@@ -19,7 +18,7 @@ const MODEL_META = {
 
 export default function InputCard({ S, onSubmit, busy, onStop, placeholder, autoFocus, showUnder = true }) {
   const [text, setText] = useState('');
-  const [mode, setMode] = useState('craft'); // craft | plan | ask | swarm
+  const [mode, setMode] = useState('craft'); // craft | plan | ask
   const prefWs = S?.settings?.prefs?.defaultWs;
   const defWs = prefWs && S?.workspaces?.some((w) => w.id === prefWs) ? prefWs : S?.workspaces?.[0]?.id;
   const [wsId, setWsId] = useState(defWs);
@@ -35,8 +34,6 @@ export default function InputCard({ S, onSubmit, busy, onStop, placeholder, auto
   const [maxMode, setMaxMode] = useState(false);
   const [tier, setTier] = useState('fast');
   const [picked, setPicked] = useState(false);
-  const [swarmEnabled, setSwarmEnabled] = useState(S?.settings?.swarm?.autoEnable ?? true);
-  const [strategy, setStrategy] = useState(S?.settings?.swarm?.strategy || 'auto');
   const ta = useRef(null);
 
   const [refFiles, setRefFiles] = useState([]);
@@ -62,8 +59,7 @@ export default function InputCard({ S, onSubmit, busy, onStop, placeholder, auto
   const submit = () => {
     if (!text.trim() || busy) return;
     const refs = refFiles.filter((r) => r.wsId === (wsId || defWs)).map((r) => r.path);
-    const finalMode = swarmEnabled ? 'swarm' : mode;
-    onSubmit({ prompt: text.trim(), mode: finalMode, workspaceId: wsId, skillIds: skills, modelId, expert, refFiles: refs, skillName: skillPick, strategy });
+    onSubmit({ prompt: text.trim(), mode, workspaceId: wsId, skillIds: skills, modelId, expert, refFiles: refs, skillName: skillPick });
     setText('');
     setRefFiles([]);
     if (ta.current) ta.current.style.height = 'auto';
@@ -76,7 +72,6 @@ export default function InputCard({ S, onSubmit, busy, onStop, placeholder, auto
     if (!files?.length) return;
     const target = wsId || defWs;
     if (!target) return;
-    const uploadedRels = [];
     for (const f of files) {
       const entry = { name: f.name, rel: '', status: 'up' };
       setUploads((v) => [...v, entry]);
@@ -88,23 +83,10 @@ export default function InputCard({ S, onSubmit, busy, onStop, placeholder, auto
           body: JSON.stringify({ name: f.name, base64 }),
         }).then((x) => x.json());
         setUploads((v) => v.map((u) => (u.name === f.name ? { ...u, rel: r.rel || '', status: r.ok ? 'ok' : 'err' } : u)));
-        if (r.ok) {
-          uploadedRels.push(r.rel);
-          setText((t) => (t ? t + ' ' : '') + `@${f.name} `);
-        }
+        if (r.ok) setText((t) => (t ? t + ' ' : '') + `@${f.name} `);
       } catch {
         setUploads((v) => v.map((u) => (u.name === f.name ? { ...u, status: 'err' } : u)));
       }
-    }
-    // 真提取：拖拽文件即上下文，逐份提取100页报告归并（调用后端多文件上下文接口）
-    if (uploadedRels.length) {
-      try {
-        // 模拟多文件上下文提取：后端 /api/workspaces/:id/file 读取后，前端提示已纳入上下文
-        setText((t) => {
-          const extra = uploadedRels.length>1 ? `\n\n已拖入${uploadedRels.length}份文件，蜂群将逐份提取→归并→可视化（已自动@引用，提交后并行处理）` : `\n\n已拖入 ${uploadedRels[0]}，已纳入上下文`;
-          return t.includes('蜂群将逐份提取') ? t : t + extra;
-        });
-      } catch {}
     }
     setTimeout(() => setUploads((v) => v.filter((u) => u.status === 'up')), 4000);
   };
@@ -112,86 +94,20 @@ export default function InputCard({ S, onSubmit, busy, onStop, placeholder, auto
   const mentionables = (S?.tasks || []).flatMap((t) => (t.artifacts || []).map((a) => a.name));
   const wsFiles = (S?.workspaces || []).find((w) => w.id === wsId)?.files || [];
 
-  const [mediaRec, setMediaRec] = useState(null);
-  const mediaRef = useRef(null);
-  const chunksRef = useRef([]);
-
-  const toggleMic = async () => {
+  const toggleMic = () => {
     if (recRef.current) { recRef.current.stop(); recRef.current = null; setRec(null); return; }
-    if (mediaRef.current && mediaRef.current.state==='recording') {
-      mediaRef.current.stop();
-      setMediaRec(null);
-      setRec(null);
-      return;
-    }
-    // 尝试 MediaRecorder blob 保存 P0
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      chunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size>0) chunksRef.current.push(e.data); };
-      mr.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        const buf = await blob.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-        try {
-          const r = await fetch('/api/voice/blob', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64, wsId: wsId||defWs, mime: 'audio/webm' }) }).then(x=>x.json());
-          console.log('[voice] blob saved', r);
-        } catch {}
-        stream.getTracks().forEach(t=>t.stop());
-        setMediaRec(null);
-      };
-      mediaRef.current = mr;
-      mr.start();
-      setMediaRec(mr);
-      setRec('recording');
-    } catch {
-      // fallback to SpeechRecognition
-    }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { if (!mediaRef.current) { setRec('err'); setTimeout(() => setRec(null), 2200); } return; }
+    if (!SR) { setRec('err'); setTimeout(() => setRec(null), 2200); return; }
     const r = new SR();
     r.lang = 'zh-CN'; r.interimResults = false;
-    r.onresult = async (e) => {
-      const transcript = e.results[0][0].transcript;
-      setText((t) => (t ? t + ' ' : '') + transcript);
-      try {
-        await fetch('/api/voice/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: transcript, wsId: wsId || defWs }) });
-        // 自动建任务：长度>15自动创建蜂群任务
-        if (transcript.length > 15) {
-          console.log('[voice] 转写已保存，自动创建任务', transcript);
-          // 自动提交
-          const refs = refFiles.filter((r) => r.wsId === (wsId || defWs)).map((r) => r.path);
-          onSubmit({ prompt: transcript, mode: swarmEnabled ? 'swarm' : 'craft', workspaceId: wsId, skillIds: skills, modelId, refFiles: refs });
-          setText('');
-        }
-      } catch {}
-    };
-    r.onend = () => { recRef.current = null; if (!mediaRef.current || mediaRef.current.state!=='recording') setRec(null); };
-    r.onerror = () => { recRef.current = null; if (!mediaRef.current || mediaRef.current.state!=='recording') setRec(null); };
+    r.onresult = (e) => setText((t) => (t ? t + ' ' : '') + e.results[0][0].transcript);
+    r.onend = () => { recRef.current = null; setRec(null); };
+    r.onerror = () => { recRef.current = null; setRec(null); };
     recRef.current = r; setRec(r); r.start();
   };
 
-  // 拖拽文件即上下文 P0 真提取
-  const [dragOver, setDragOver] = useState(false);
-  const onDragOver = (e) => { e.preventDefault(); setDragOver(true); };
-  const onDragLeave = (e) => { e.preventDefault(); setDragOver(false); };
-  const onDrop = async (e) => {
-    e.preventDefault(); setDragOver(false);
-    const files = [...(e.dataTransfer?.files || [])];
-    if (files.length) {
-      await doUpload(files);
-      if (files.length > 1) setText(t=> (t? t+' ' : '') + `已拖入${files.length}份文件，蜂群将逐份提取→归并→可视化... `);
-      else if (files.length===1) {
-        // 单文件自动提示上下文已纳入
-        setText(t=> t.includes('@') ? t : t + ` 请基于 @${files[0].name} `);
-      }
-    }
-  };
-
   return (
-    <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} style={{ position: 'relative' }}>
-      {dragOver && <div style={{ position: 'absolute', inset: 0, background: 'rgba(14,181,131,0.08)', border: '2px dashed #0eb583', borderRadius: 18, display: 'grid', placeItems: 'center', zIndex: 10, fontWeight: 600, color: '#0eb583' }}>📎 拖拽文件即上下文 · 100页报告逐份提取·蜂群并行</div>}
+    <div>
       {menu && <div className="soft-mask" onClick={() => setMenu(null)} />}
       <input ref={fileRef} type="file" multiple hidden onChange={(e) => { doUpload([...e.target.files]); e.target.value = ''; }} />
       <div className="input-card">
@@ -211,18 +127,19 @@ export default function InputCard({ S, onSubmit, busy, onStop, placeholder, auto
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
         />
         <div className="ic-row">
-          <button className="plus-btn" title="添加文件" onClick={() => fileRef.current?.click()} style={{ background: '#f6f5f2' }}>
-            <IcPlus size={17} />
+          <button className="plus-btn" title={menu ? '关闭' : '添加'} onClick={() => setMenu(plusOpen ? null : 'plus')}>
+            {plusOpen ? <IcX size={16} /> : <IcPlus size={17} />}
           </button>
-          <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 8, flex: 1 }}>拖文件进来或一句话，蜂群自动拆解，不用选模式</span>
           <div className="ic-right">
-            <SwarmToggle enabled={swarmEnabled} onToggle={() => setSwarmEnabled(!swarmEnabled)} />
-            <button className="auto-btn" title={rec==='recording' ? '停止录音' : '语音输入，自动转任务'} onClick={toggleMic} style={rec && rec !== 'err' ? { color: '#e0665f', border: '1px solid #e0665f' } : {}}>
-              <IcMic size={15} />{rec==='recording' ? <span style={{ fontSize: 11, marginLeft: 4 }}>●录音中</span> : null}
+            <button className="auto-btn" onClick={() => setMenu(menu === 'model' ? null : 'model')}>
+              <IcBolt size={15} /> {maxMode ? 'Max·' : ''}{picked && activeModel ? activeModel.name : TIERS.find((t) => t.id === tier)?.name} <IcChevD size={12} />
+            </button>
+            <button className="auto-btn" title={rec ? '停止语音输入' : rec === 'err' ? '当前浏览器不支持语音识别' : '语音输入'} onClick={toggleMic} style={rec && rec !== 'err' ? { color: '#e0665f' } : {}}>
+              <IcMic size={15} />{rec === 'err' && <span style={{ fontSize: 11, marginLeft: 4 }}>不支持</span>}
             </button>
             {busy
               ? <button className="stop-dark" title="中断执行" onClick={onStop}><IcStop size={14} /></button>
-              : <button className="send-dark" disabled={!text.trim()} onClick={submit} title="发送 - 蜂群自动执行"><IcArrowUp size={16} /></button>}
+              : <button className="send-dark" disabled={!text.trim()} onClick={submit} title="发送"><IcArrowUp size={16} /></button>}
           </div>
         </div>
 
@@ -369,11 +286,6 @@ export default function InputCard({ S, onSubmit, busy, onStop, placeholder, auto
               <button style={{ marginLeft: 4, opacity: .6 }} onClick={() => setRefFiles((v) => v.filter((x) => x !== r))}>✕</button>
             </span>
           ))}
-          {swarmEnabled && (
-            <span style={{ fontSize: 10, color: 'var(--muted)', marginLeft: 6, background: '#fffbe6', padding: '2px 8px', borderRadius: 999, border: '1px solid #f0e6b8' }}>
-              🐝 蜂群自动：复杂任务自动拆3-6步并行，策略自动选，不用你选
-            </span>
-          )}
         </div>
       )}
     </div>

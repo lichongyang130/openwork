@@ -316,13 +316,7 @@ input[type='range'] { accent-color: var(--accent); }
 .btn-danger { margin-top: 18px; background: #fff; border: 1px solid var(--border2); color: #e0665f; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; }
 .btn-danger:hover { background: #fdf3f2; }
 
-/* 右侧预览强制常驻 - 按用户需求开启，即使移动端也显示为抽屉 */
-@media (max-width: 960px) { 
-  .panel { display: flex !important; position: fixed; right: 0; top: 0; bottom: 0; width: 90vw; max-width: 340px; z-index: 90; box-shadow: -10px 0 30px rgba(0,0,0,.15); } 
-  .sidebar { width: 216px; min-width: 216px; } 
-  .home-right-preview { display: flex !important; width: 100% !important; border-left: none; border-top: 1px solid var(--border); }
-  .home { flex-direction: column !important; }
-}
+@media (max-width: 960px) { .panel { display: none; } .sidebar { width: 216px; min-width: 216px; } }
 
 /* ===== settings pages v2 (pixel parity) ===== */
 .big-num { font-size: 34px; font-weight: 700; margin-top: 6px; letter-spacing: -.5px; color: var(--text); }
@@ -367,7 +361,6 @@ input[type='range'] { accent-color: var(--accent); }
 
 /* ===== home v6 (6.png) ===== */
 .home-inner { max-width: 1000px; }
-.home-right-preview { display: flex; } /* 右侧预览常驻开启 */
 
 .hero { font-size: 30px; }
 .scene-tabs { background: #eceae7; border-radius: 999px; padding: 4px; gap: 2px; display: flex; width: max-content; margin: 22px auto 28px; }

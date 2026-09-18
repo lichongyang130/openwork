@@ -5,8 +5,15 @@ import { IcPlusC, IcRobot, IcSpeaker, IcUsers, IcClock, IcGrid, IcSearch, IcFilt
 
 const NAV = [
   { id: 'home', name: '做一做', icon: IcDo },
-  // 极简：只留做一做，其他高级功能折叠到更多，避免用户懵逼
-  // 数据看板/工具区/蜂群实验室等已隐藏，能力通过输入框自动触发
+  { id: 'dashboard', name: '📊 数据看板', icon: IcGrid },
+  { id: 'gene-market', name: '🧬 Gene记忆', icon: IcSpark },
+  { id: 'assistant', name: '远程指令', icon: IcRemote },
+  { id: 'projects', name: '工作区', icon: IcWs },
+  { id: 'esk', name: '能力市场', icon: IcMarket },
+  { id: 'automation', name: '定时任务', icon: IcTimer },
+  { id: 'library', name: '资料库', icon: IcLib },
+  { id: 'inspiration', name: '灵感', icon: IcIdea },
+  // 蜂群实验室已按需求完全去掉
 ];
 
 const FILTERS = [['', '全部任务'], ['running', '进行中'], ['planning', '规划中'], ['waiting', '待确认'], ['done', '已完成'], ['failed', '失败']];
