@@ -99,6 +99,12 @@ import { DEEP_REFACTOR_3 } from './deep/refactor3.js';
 import { DEEP_REFACTOR_4 } from './deep/refactor4.js';
 import { DEEP_REFACTOR_5 } from './deep/refactor5.js';
 import { DEEP_REFACTOR_6 } from './deep/refactor6.js';
+import { DEEP_REGEX_1 } from './deep/regex1.js';
+import { DEEP_REGEX_2 } from './deep/regex2.js';
+import { DEEP_REGEX_3 } from './deep/regex3.js';
+import { DEEP_REGEX_4 } from './deep/regex4.js';
+import { DEEP_REGEX_5 } from './deep/regex5.js';
+import { DEEP_REGEX_6 } from './deep/regex6.js';
 
 
 
@@ -199,6 +205,12 @@ DEEP_REFACTOR_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:重构建�
 DEEP_REFACTOR_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:重构建议'][idx]) ALL['code:重构建议'][idx] = c; });
 DEEP_REFACTOR_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:重构建议'][idx]) ALL['code:重构建议'][idx] = c; });
 DEEP_REFACTOR_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:重构建议'][idx]) ALL['code:重构建议'][idx] = c; });
+DEEP_REGEX_1.forEach((c, j) => { const idx = j + 0; if (ALL['code:正则生成'][idx]) ALL['code:正则生成'][idx] = c; });
+DEEP_REGEX_2.forEach((c, j) => { const idx = j + 5; if (ALL['code:正则生成'][idx]) ALL['code:正则生成'][idx] = c; });
+DEEP_REGEX_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:正则生成'][idx]) ALL['code:正则生成'][idx] = c; });
+DEEP_REGEX_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:正则生成'][idx]) ALL['code:正则生成'][idx] = c; });
+DEEP_REGEX_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:正则生成'][idx]) ALL['code:正则生成'][idx] = c; });
+DEEP_REGEX_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:正则生成'][idx]) ALL['code:正则生成'][idx] = c; });
 
 
 
