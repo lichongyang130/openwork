@@ -69,6 +69,13 @@ import { DEEP_BUG_3 } from './deep/bug3.js';
 import { DEEP_BUG_4 } from './deep/bug4.js';
 import { DEEP_BUG_5 } from './deep/bug5.js';
 import { DEEP_BUG_6 } from './deep/bug6.js';
+import { DEEP_UTEST_1 } from './deep/utest1.js';
+import { DEEP_UTEST_2 } from './deep/utest2.js';
+import { DEEP_UTEST_3 } from './deep/utest3.js';
+import { DEEP_UTEST_4 } from './deep/utest4.js';
+import { DEEP_UTEST_5 } from './deep/utest5.js';
+import { DEEP_UTEST_6 } from './deep/utest6.js';
+
 
 
 
@@ -135,6 +142,13 @@ DEEP_BUG_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:Bug 诊断'][id
 DEEP_BUG_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:Bug 诊断'][idx]) ALL['code:Bug 诊断'][idx] = c; });
 DEEP_BUG_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:Bug 诊断'][idx]) ALL['code:Bug 诊断'][idx] = c; });
 DEEP_BUG_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:Bug 诊断'][idx]) ALL['code:Bug 诊断'][idx] = c; });
+DEEP_UTEST_1.forEach((c, j) => { const idx = j + 0; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
+DEEP_UTEST_2.forEach((c, j) => { const idx = j + 5; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
+DEEP_UTEST_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
+DEEP_UTEST_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
+DEEP_UTEST_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
+DEEP_UTEST_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
+
 
 
 
