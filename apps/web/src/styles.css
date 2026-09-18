@@ -316,7 +316,13 @@ input[type='range'] { accent-color: var(--accent); }
 .btn-danger { margin-top: 18px; background: #fff; border: 1px solid var(--border2); color: #e0665f; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; }
 .btn-danger:hover { background: #fdf3f2; }
 
-@media (max-width: 960px) { .panel { display: none; } .sidebar { width: 216px; min-width: 216px; } }
+/* 右侧预览强制常驻 - 按用户需求开启，即使移动端也显示为抽屉 */
+@media (max-width: 960px) { 
+  .panel { display: flex !important; position: fixed; right: 0; top: 0; bottom: 0; width: 90vw; max-width: 340px; z-index: 90; box-shadow: -10px 0 30px rgba(0,0,0,.15); } 
+  .sidebar { width: 216px; min-width: 216px; } 
+  .home-right-preview { display: flex !important; width: 100% !important; border-left: none; border-top: 1px solid var(--border); }
+  .home { flex-direction: column !important; }
+}
 
 /* ===== settings pages v2 (pixel parity) ===== */
 .big-num { font-size: 34px; font-weight: 700; margin-top: 6px; letter-spacing: -.5px; color: var(--text); }
@@ -361,6 +367,8 @@ input[type='range'] { accent-color: var(--accent); }
 
 /* ===== home v6 (6.png) ===== */
 .home-inner { max-width: 1000px; }
+.home-right-preview { display: flex; } /* 右侧预览常驻开启 */
+
 .hero { font-size: 30px; }
 .scene-tabs { background: #eceae7; border-radius: 999px; padding: 4px; gap: 2px; display: flex; width: max-content; margin: 22px auto 28px; }
 .scene-tab { background: transparent; border-radius: 999px; padding: 7px 16px; }
@@ -1063,3 +1071,77 @@ input[type='range'] { accent-color: var(--accent); }
 .dp-recs b{font-size:13px;color:var(--pink);display:block}
 .cp-wrap.bg-dark .dp-recs b{color:#333}
 .dp-recs span{font-size:11.5px;opacity:.65;display:block;margin-top:3px;line-height:1.6}
+
+/* ===== 蜂群系统 Swarm System ===== */
+.swarm-view{background:#fff;border:1px solid var(--border);border-radius:14px;margin:0 0 12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.swarm-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fffbe6;border-bottom:1px solid #f0e6b8}
+.swarm-hive{display:flex;align-items:center;gap:10px}
+.hive-icon{font-size:20px}
+.hive-title{font-weight:700;font-size:14px}
+.hive-count{font-size:12px;color:var(--muted)}
+.hive-status{margin-left:8px;font-size:11px;padding:2px 8px;border-radius:999px;background:#1c1b18;color:#fff}
+.hive-status.done{background:#27a35f}
+.swarm-metrics{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.metric{display:flex;align-items:center;gap:4px}
+.credit-bar{width:80px;height:6px;background:#eee;border-radius:999px;overflow:hidden}
+.credit-bar .fill{height:100%;background:linear-gradient(90deg,#0eb583,#6aa7ff);transition:width .3s}
+.swarm-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;min-height:380px}
+.swarm-col{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.swarm-col:last-child{border-right:none}
+.col-head{padding:10px 14px;font-size:12px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);background:#fafaf8}
+.bee-list,.pollen-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+.bee-card{background:#fff;border:1px solid var(--border);border-left:3px solid #ccc;border-radius:10px;padding:10px 12px;position:relative;transition:all .2s}
+.bee-card.running{border-color:#0eb583;box-shadow:0 2px 8px rgba(14,181,131,.15)}
+.bee-card.done{background:#f9fdfb}
+.bee-head{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.bee-icon{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px}
+.bee-role{font-size:11px;font-weight:600;color:var(--text2)}
+.bee-status{margin-left:auto}
+.bee-title{font-size:13px;font-weight:600}
+.bee-prompt{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bee-meta{display:flex;gap:8px;margin-top:6px;font-size:11px}
+.bee-meta .conf{color:#0eb583;font-weight:600}
+.bee-meta .gdi{color:#6aa7ff}
+.bee-conn{position:absolute;left:-8px;top:50%;width:8px;height:2px}
+.pollen-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.pol-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.pol-source{font-size:11px;font-weight:600;color:var(--text2)}
+.pol-conf{font-size:11px;padding:2px 6px;border-radius:999px;font-weight:700}
+.pol-conf.high{background:#e2f5ea;color:#27a35f}
+.pol-conf.mid{background:#fff4dc;color:#d99a2b}
+.pol-conf.low{background:#fdecea;color:#e0665f}
+.pol-claim{font-size:12.5px;line-height:1.5;margin-bottom:4px}
+.pol-evi .evi{font-size:11px;color:var(--muted);margin:2px 0}
+.pol-foot{display:flex;gap:8px;font-size:10.5px;color:var(--muted2);margin-top:6px}
+.waggle{border-top:1px solid var(--border);padding:10px 14px;background:#fafaf8}
+.waggle-title{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.waggle-svg{position:relative;height:80px;background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.waggle-dot{position:absolute;width:10px;height:10px;border-radius:50%;animation:pulse 1.5s infinite}
+.waggle-lines{position:absolute;inset:0;width:100%;height:100%}
+.honey-card{background:#f0faf5;border:1px solid #bfe4d6;border-radius:12px;padding:14px;margin:8px}
+.honey-conf{text-align:center}
+.honey-conf .big{font-size:32px;font-weight:800;color:#27a35f}
+.honey-conf .label{font-size:11px;color:var(--muted);margin-top:2px}
+.honey-conf .badge{display:inline-block;margin-top:6px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600}
+.honey-conf .badge.ok{background:#e2f5ea;color:#27a35f}
+.honey-conf .badge.warn{background:#fff4dc;color:#d99a2b}
+.honey-conf .badge.fail{background:#fdecea;color:#e0665f}
+.conflict{margin-top:8px;font-size:11px;color:#d99a2b;background:#fff8e6;padding:6px 8px;border-radius:6px}
+.honey-deliver{padding:8px}
+.d-head{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.d-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:12px}
+.d-icon{font-size:14px}
+.d-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d-size{color:var(--muted2);font-size:11px}
+.gene-hint{background:#f6f0ff;border:1px solid #d8c8f0;border-radius:12px;padding:12px;margin:8px}
+.gh-head{font-size:12px;font-weight:700;color:#6b4bd0;margin-bottom:4px}
+.gh-text{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px}
+.gh-item{font-size:11px;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0;border:1px solid #eee6ff}
+.swarm-footer{padding:8px 14px;background:#fafaf8;border-top:1px solid var(--border);font-size:11px;color:var(--muted);text-align:center}
+.swarm-toggle{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:12px;color:var(--text2);position:relative}
+.swarm-toggle:hover{background:var(--hover)}
+.swarm-toggle.on{background:#1c1b18;color:#fff;border-color:#1c1b18}
+.swarm-toggle .icon{font-size:14px}
+.swarm-toggle .dot{width:6px;height:6px;border-radius:50%;background:#27a35f;animation:pulse 1s infinite}
+.swarm-toggle .count{background:#f0e6b8;color:#8a6d00;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700}
+@media(max-width:960px){.swarm-grid{grid-template-columns:1fr}.swarm-col{border-right:none;border-bottom:1px solid var(--border)}}
