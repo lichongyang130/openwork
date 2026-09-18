@@ -65,7 +65,7 @@ export default function SwarmLab({ S, setView, refresh }) {
           </div>
         </div>
         <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, background: '#fff', padding: '4px 8px', borderRadius: 999, border: '1px solid #bae6fd' }}>💡 何时用？任务>80字或含2个办公关键词（整理/报告/发票/会议）自动触发</span>
+          <span style={{ fontSize: 11, background: '#fff', padding: '4px 8px', borderRadius: 999, border: '1px solid #bae6fd' }}>💡 何时用？任务&gt;80字或含2个办公关键词（整理/报告/发票/会议）自动触发</span>
           <span style={{ fontSize: 11, background: '#fff', padding: '4px 8px', borderRadius: 999, border: '1px solid #bae6fd' }}>⚙️ 策略：维度(PESTEL/4P) / 流程(逐份读→表格→图表) / 假设(正反方辩论)</span>
           <span style={{ fontSize: 11, background: '#fff', padding: '4px 8px', borderRadius: 999, border: '1px solid #bae6fd' }}>🛡️ 省心：拖拽即上下文 / 快照回滚 / 验证蜂冲突标红 / 定时推送</span>
         </div>
