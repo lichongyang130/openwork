@@ -75,6 +75,13 @@ import { DEEP_UTEST_3 } from './deep/utest3.js';
 import { DEEP_UTEST_4 } from './deep/utest4.js';
 import { DEEP_UTEST_5 } from './deep/utest5.js';
 import { DEEP_UTEST_6 } from './deep/utest6.js';
+import { DEEP_README_1 } from './deep/readme1.js';
+import { DEEP_README_2 } from './deep/readme2.js';
+import { DEEP_README_3 } from './deep/readme3.js';
+import { DEEP_README_4 } from './deep/readme4.js';
+import { DEEP_README_5 } from './deep/readme5.js';
+import { DEEP_README_6 } from './deep/readme6.js';
+
 
 
 
@@ -148,6 +155,13 @@ DEEP_UTEST_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:写单元测�
 DEEP_UTEST_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
 DEEP_UTEST_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
 DEEP_UTEST_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:写单元测试'][idx]) ALL['code:写单元测试'][idx] = c; });
+DEEP_README_1.forEach((c, j) => { const idx = j + 0; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
+DEEP_README_2.forEach((c, j) => { const idx = j + 5; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
+DEEP_README_3.forEach((c, j) => { const idx = j + 10; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
+DEEP_README_4.forEach((c, j) => { const idx = j + 15; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
+DEEP_README_5.forEach((c, j) => { const idx = j + 20; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
+DEEP_README_6.forEach((c, j) => { const idx = j + 25; if (ALL['code:生成 README'][idx]) ALL['code:生成 README'][idx] = c; });
+
 
 
 
