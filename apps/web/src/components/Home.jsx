@@ -21,6 +21,7 @@ const SCENES = [
       { icon: IcClock, name: '日程安排', prompt: '根据我列的事项与截止时间，排出本周日程计划并标注优先级' },
     ],
   },
+  // 蜂群办公 已按需求移除（右侧输入框不再显示蜂群办公），蜂群能力通过输入框 SwarmToggle 自动启用，日常办公保留
   {
     id: 'code', name: '代码开发', icon: IcTerminal,
     chips: [
@@ -80,8 +81,9 @@ export default function Home({ S, setView, refresh }) {
   };
 
   return (
-    <div className="home">
-      <div className="home-inner">
+    <div className="home" style={{ display: 'flex', gap: 0 }}>
+      <div className="home-inner" style={{ flex: 1, minWidth: 0 }}>
+
         <div className="hero">OpenWork, 我帮你</div>
 
         <div className="scene-tabs">
@@ -92,19 +94,14 @@ export default function Home({ S, setView, refresh }) {
           ))}
         </div>
 
-        <div className="chips-wrap">
-          <div className="chips-nav">
-            <button title="上一组" onClick={() => rowRef.current?.scrollBy({ left: -320, behavior: 'smooth' })}><IcChevR size={14} style={{ transform: 'rotate(180deg)' }} /></button>
-          </div>
-          <div className="chips-row" ref={rowRef}>
-            {cur.chips.map((c) => (
-              <button key={c.name} className={`chip-card ${sel === c.name ? 'on' : ''}`} title="作为技能放入输入框" onClick={() => pickSkill(c.name)}>
+        <div className="chips-wrap" style={{ justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {cur.chips.slice(0,4).map((c) => (
+              <button key={c.name} className={`chip-card ${sel === c.name ? 'on' : ''}`} title="点击试试" onClick={() => pickSkill(c.name)} style={{ padding: '8px 14px', fontSize: 13 }}>
                 <c.icon size={15} /> {c.name}
               </button>
             ))}
-          </div>
-          <div className="chips-nav">
-            <button title="下一组" onClick={() => rowRef.current?.scrollBy({ left: 320, behavior: 'smooth' })}><IcChevR size={14} /></button>
+            <span style={{ fontSize: 11, color: 'var(--muted)', alignSelf: 'center', marginLeft: 8 }}>👉 不用选，直接在下面输入框说人话就行</span>
           </div>
         </div>
 
@@ -113,7 +110,9 @@ export default function Home({ S, setView, refresh }) {
         </div>
 
         {!hideCases && (
-          <div className="cases">
+          <div className="cases" style={{ opacity: 0.9 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', marginBottom: 8 }}>💡 案例仅供参考，不用看懂，直接输任务就行</div>
+
             <div className="cases-head">
               <span>{sel ? `「${sel}」最佳实践案例 · 共 ${catCases.length} 个${catCases.length ? ` · 第 ${(batch % batchSize) + 1} / ${batchSize} 批` : ''}` : '不知道做什么，试试最佳实践案例'}</span>
               <span className="cases-ops">
@@ -150,6 +149,37 @@ export default function Home({ S, setView, refresh }) {
         )}
       </div>
 
+      {/* 右侧预览常驻 - 按需求开启 */}
+      <div className="home-right-preview" style={{ width: 320, borderLeft: '1px solid var(--border)', background: '#fff', padding: 12, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ fontWeight: 600, fontSize: 13 }}>👁️ 右侧预览</div>
+        <div style={{ fontSize: 12, background: '#f6f5f2', borderRadius: 8, padding: 10 }}>
+          <div style={{ fontWeight: 600 }}>工作区</div>
+          <div style={{ marginTop: 4, color: 'var(--muted)' }}>{S?.workspaces?.[0]?.name || '演示工作区'}</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, wordBreak: 'break-all' }}>{S?.workspaces?.[0]?.root}</div>
+          <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {(S?.workspaces?.[0]?.files || []).slice(0, 8).map((f,i)=><span key={i} style={{ fontSize: 10, background: '#fff', border: '1px solid #eee', padding: '2px 6px', borderRadius: 999 }}>{f.name || f.path?.split('/').pop()}</span>)}
+          </div>
+        </div>
+        <div style={{ fontSize: 12, background: '#fffbe6', borderRadius: 8, padding: 10, border: '1px solid #f0e6b8' }}>
+          <div style={{ fontWeight: 600 }}>🐝 蜂群能力已集成到输入框</div>
+          <div style={{ marginTop: 4, color: 'var(--muted)', fontSize: 11 }}>日常办公已保留，蜂群办公分类已移除（按最新需求），输入框下方 SwarmToggle 自动启用蜂群，策略可选 auto/流程/维度/假设</div>
+          <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, background: '#fff', padding: '2px 6px', borderRadius: 999 }}>拖拽即上下文</span>
+            <span style={{ fontSize: 10, background: '#fff', padding: '2px 6px', borderRadius: 999 }}>单文件交付</span>
+            <span style={{ fontSize: 10, background: '#fff', padding: '2px 6px', borderRadius: 999 }}>快照回滚</span>
+            <span style={{ fontSize: 10, background: '#fff', padding: '2px 6px', borderRadius: 999 }}>额度可见</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 12, background: '#f6f5f2', borderRadius: 8, padding: 10 }}>
+          <div style={{ fontWeight: 600 }}>最近任务</div>
+          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {(S?.tasks||[]).slice(0,6).map(t=><div key={t.id} style={{ padding: '6px 8px', background: '#fff', borderRadius: 8, border: '1px solid #eee', fontSize: 11 }}><div style={{ fontWeight: 600 }}>{t.title}</div><div style={{ color: 'var(--muted)', fontSize: 10 }}>{t.status} · {t.mode} {t.swarm ? `· ${t.swarm.subtasks?.length||0}工蜂` : ''}</div></div>)}
+            {(S?.tasks||[]).length===0 && <div style={{ color: 'var(--muted)', fontSize: 11 }}>暂无任务，输入框直接提问即可</div>}
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 'auto', paddingTop: 8, borderTop: '1px solid var(--border)' }}>右侧预览已按需求常驻开启 · 产物/文件/蜂群状态实时可见</div>
+      </div>
+
       {caseOpen && (() => {
           const meta = META[caseOpen.key];
           const arr = ALL[caseOpen.key] || [];
@@ -173,8 +203,7 @@ export default function Home({ S, setView, refresh }) {
               onMake={() => { setCaseOpen(null); submit({ prompt: meta.prompt, mode: 'craft', workspaceId: S.workspaces[0]?.id, skillIds: [], skillName: chipName }); }}
             />
           );
-        })()}/>
-      )}
+        })()}
     </div>
   );
 }
