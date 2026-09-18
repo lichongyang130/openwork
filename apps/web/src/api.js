@@ -24,7 +24,6 @@ export const api = {
   audit: () => fetch('/api/audit').then(J),
   wsFile: (wsId, p) => fetch(`/api/workspaces/${wsId}/file?path=${encodeURIComponent(p)}`).then(J),
   renameTask: (id, title) => fetch(`/api/tasks/${id}/rename`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title }) }).then(J),
-  deleteTask: (id) => fetch(`/api/tasks/${id}`, { method: 'DELETE' }).then(J),
   deleteModel: (id) => fetch('/api/models/' + encodeURIComponent(id), { method: 'DELETE' }).then(J),
   toggleSkill: (id) => fetch(`/api/skills/${id}/toggle`, { method: 'POST' }).then(J),
   installSkill: (id) => fetch(`/api/skills/${id}/install`, { method: 'POST' }).then(J),
@@ -32,4 +31,15 @@ export const api = {
   toggleAutomation: (id) => fetch(`/api/automations/${id}/toggle`, { method: 'POST' }).then(J),
   deleteAutomation: (id) => fetch(`/api/automations/${id}`, { method: 'DELETE' }).then(J),
   runAutomation: (id) => fetch(`/api/automations/${id}/run`, { method: 'POST' }).then(J),
+  // 蜂群 v2
+  swarmDecompose: (prompt, strategy='auto') => fetch('/api/swarm/decompose', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, strategy }) }).then(J),
+  swarmCredits: () => fetch('/api/swarm/credits').then(J),
+  swarmUpdateSubtasks: (taskId, subtasks) => fetch(`/api/swarm/tasks/${taskId}/subtasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subtasks }) }).then(J),
+  channelPush: (body) => fetch('/api/channels/push', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(J),
+  listGenes: (q) => fetch(`/api/genes${q ? '?q=' + encodeURIComponent(q) : ''}`).then(J),
+  createGene: (body) => fetch('/api/genes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(J),
+  updateGeneGDI: (id, delta) => fetch(`/api/genes/${id}/gdi`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta }) }).then(J),
+  deleteGene: (id) => fetch(`/api/genes/${id}`, { method: 'DELETE' }).then(J),
+  listMarketGenes: (q) => fetch(`/api/marketplace/genes${q ? '?q=' + encodeURIComponent(q) : ''}`).then(J),
+  installMarketGene: (id) => fetch(`/api/marketplace/genes/${id}/install`, { method: 'POST' }).then(J),
 };

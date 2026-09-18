@@ -404,16 +404,74 @@ function Personal({ S, prefs, setPref, soon }) {
   );
 }
 
-/* ================= 记忆与进化 (07) ================= */
-function Memory({ prefs, setPref }) {
+/* ================= 记忆与进化 (07) + 蜂群Gene ================= */
+function Memory({ S, prefs, setPref, soon }) {
+  const [genes, setGenes] = React.useState(S?.genes || []);
+  const [mkt, setMkt] = React.useState([]);
+  const [q, setQ] = React.useState('');
+  React.useEffect(() => { api.listGenes().then(setGenes).catch(()=>{}); api.listMarketGenes().then(setMkt).catch(()=>{}); }, []);
+  const search = async () => {
+    const g = await api.listGenes(q);
+    setGenes(g);
+    const m = await api.listMarketGenes(q);
+    setMkt(m);
+  };
+  const swarm = S?.settings?.swarm || {};
+  const evolution = S?.settings?.evolution || {};
   return (
     <>
-      <div className="info-banner">记忆让 OpenWork 记住你的偏好和习惯，对话越多，它就越懂你。</div>
+      <div className="info-banner">记忆让 OpenWork 记住你的偏好和习惯，对话越多，它就越懂你。蜂群Gene自进化：高置信度经验沉淀为技能，越用越聪明。</div>
       <div className="set-card">
         <Row tt="生成对话记忆" dd="允许 OpenWork 从对话中提取并记住相关上下文，以便在未来对话中提供更连贯、个性化的回应。" ctl={<Tog dark on={prefs.memChat} onChange={(v) => setPref({ memChat: v })} />} />
         <div className="pf-div" />
         <Row tt="本地记忆" dd="将日常工作记忆写入到本地文件，跨会话保留上下文。" ctl={<Tog dark on={prefs.memLocal} onChange={(v) => setPref({ memLocal: v })} />} />
+        <div className="pf-div" />
+        <Row tt="🐝 蜂群自进化" dd="右上角开关默认开，定期把修复优化存本机，第一次试错多，第二次复用更快" ctl={<Tog dark on={evolution.enabled ?? true} onChange={async (v) => { await api.saveSettings({ evolution: { enabled: v } }); soon(v ? '自进化已开启' : '自进化已关闭'); }} />} />
+        <div className="pf-div" />
+        <Row tt="🐝 Swarm自动开启" dd="复杂任务自动拆解为简单任务并行，省人工省心，1500额度内白嫖" ctl={<Tog dark on={swarm.autoEnable ?? true} onChange={async (v) => { await api.saveSettings({ swarm: { autoEnable: v } }); soon(v ? '蜂群自动模式已开启' : '蜂群自动模式已关闭'); }} />} />
       </div>
+
+      <div className="set-sec-lb">🧬 Gene基因记忆 · {genes.length} · GDI评分越用越聪明</div>
+      <div className="set-card" style={{ padding: '12px 16px' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <input placeholder="搜索Gene，如 周报/发票/报告" value={q} onChange={e=>setQ(e.target.value)} style={{ flex: 1 }} />
+          <button className="btn-outline" onClick={search}>搜索</button>
+        </div>
+        {genes.map(g => (
+          <div key={g.id} className="set-row" style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ flex: 1 }}>
+              <div className="tt" style={{ fontSize: 13 }}>{g.claim} {g.shared && <span style={{ fontSize: 10, background: '#e2f5ea', padding: '1px 5px', borderRadius: 4, color: '#27a35f' }}>已共享</span>}</div>
+              <div className="dd">{g.from} · GDI {g.gdi} · 使用 {g.usage||0}次 · {(g.evidence||[]).slice(0,2).join(' / ')}</div>
+            </div>
+            <div className="ctl" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <span className="badge-green">GDI {g.gdi}</span>
+              <button className="btn-outline" style={{ fontSize: 11, padding: '2px 8px' }} onClick={async()=>{
+                const r=await fetch(`/api/genes/${g.id}/share`,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({team:'default'})}).then(r=>r.json());
+                setGenes(genes.map(x=> x.id===g.id ? r : x));
+                soon('已共享到团队 · 权限审计可查');
+              }}>共享</button>
+              <button className="iconbtn" title="删除" onClick={async()=>{ await api.deleteGene(g.id); setGenes(genes.filter(x=>x.id!==g.id)); }}><IcTrash size={13} /></button>
+            </div>
+          </div>
+        ))}
+        {genes.length===0 && <div className="empty">暂无Gene，运行蜂群任务后高置信度经验自动沉淀</div>}
+      </div>
+
+      <div className="set-sec-lb">🌸 Marketplace · 别人跑通的Gene直接复用 · 站在别人经验上开工</div>
+      <div className="set-card" style={{ padding: '12px 16px' }}>
+        {mkt.map(m => (
+          <div key={m.id} className="set-row" style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ flex: 1 }}>
+              <div className="tt" style={{ fontSize: 13 }}>{m.claim}</div>
+              <div className="dd">{m.from} · GDI {m.gdi} · 下载 {m.downloads} · {m.tag}</div>
+            </div>
+            <div className="ctl">
+              <button className="btn-black" style={{ fontSize: 12, padding: '6px 12px' }} onClick={async()=>{ const g=await api.installMarketGene(m.id); if(g){ setGenes([...genes,g]); soon(`已安装Gene：${m.tag}`);} }}>安装</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="set-sec-lb">已记住的内容</div>
       <div className="set-card">
         <Row tt="偏好：输出风格" dd="倾向于结论先行、结构化分节表达" ctl={<span className="badge-gray">1 天前</span>} />

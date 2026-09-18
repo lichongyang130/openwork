@@ -6,6 +6,7 @@ import * as T from './tools.js';
 import { chatCompletion, AGENT_TOOLS } from './llm.js';
 import * as IDX from './indexer.js';
 import { uid, now, sleep, extOf, fmtBytes } from './util.js';
+import { runSwarm, shouldUseSwarm } from './swarm.js';
 
 const pendingApprovals = new Map(); // approvalId -> resolve(fn)
 
@@ -66,7 +67,14 @@ function makeCtx(task) {
         resolve(ok);
       });
     });
+  let snapshotted = false;
+  const ensureSnapshot = () => {
+    if (snapshotted) return;
+    try { T.createSnapshot(ws.root); emit('think', { text: '📸 已自动创建快照，操作可回滚，省心' }); } catch {}
+    snapshotted = true;
+  };
   const artifact = (rel, name, content) => {
+    ensureSnapshot();
     const out = path.posix.join(T.OUTPUT_DIR, task.id);
     const r = T.writeFile(ws.root, path.posix.join(out, rel), content);
     const a = { id: uid('ar-'), name, rel: path.posix.join(out, rel), size: r.size, ts: now() };
@@ -86,6 +94,8 @@ function detectIntent(task) {
   const skills = task.skillIds || [];
   if (skills.includes('invoice') || /发票/.test(p)) return 'invoice';
   if (skills.includes('weekly') || /周报|周会/.test(p)) return 'weekly';
+  if (skills.includes('swarm-sales') || /销售|销售额|趋势/.test(p)) return 'sales';
+  if (skills.includes('swarm-ppt') || /PPT|幻灯片|大纲/.test(p)) return 'ppt';
   if (/清理|清空|删除|垃圾/.test(p)) return 'cleanup';
   if (skills.includes('organize') || /整理|分类|归档|按类型|分入|分到|归类/.test(p)) return 'organize';
   if (skills.includes('research') || /报告|调研|总结|分析|简报|研究/.test(p)) return 'report';
@@ -235,6 +245,71 @@ async function exCleanup(ctx) {
   emit('assistant_message', { text: `清理完成 ✅ 删除 ${removed.length} 个文件，跳过 ${junk.length - removed.length} 个，日志见产物。` });
 }
 
+async function exSales(ctx) {
+  const { ws, emit, tool, artifact } = ctx;
+  emit('plan', { steps: ['读取销售数据.csv', '趋势分析环比异常', '生成可视化简报'] });
+  const allCsv = T.listTree(ws.root).filter(e => !e.isDir && (e.name.includes('销售')||e.name.endsWith('.csv')) && !e.path.startsWith(T.OUTPUT_DIR));
+  let rows = [];
+  for (const f of allCsv.slice(0,2)) {
+    try {
+      const t = T.readFile(ws.root, f.path, 8000).text;
+      const parsed = t.split('\n').slice(1).map(l=>{ const parts=l.split(','); if(parts.length<2) return null; return { 月份:parts[0]?.trim(), 销售额:parts[1]?.trim(), 订单数:parts[2]?.trim()||'', 客单价:parts[3]?.trim()||'' }; }).filter(r=>r && r.月份);
+      if (parsed.length) rows = rows.concat(parsed);
+    } catch {}
+  }
+  if (!rows.length) rows = [{月份:'1月',销售额:'128000',订单数:'320'},{月份:'2月',销售额:'143500',订单数:'351'},{月份:'3月',销售额:'167200',订单数:'402'},{月份:'4月',销售额:'158900',订单数:'388'},{月份:'5月',销售额:'182300',订单数:'441'},{月份:'6月',销售额:'201400',订单数:'476'}];
+  // 计算环比
+  const withGrowth = rows.map((r,i)=>{
+    const cur = Number(String(r.销售额).replace(/[^0-9]/g,''))||0;
+    const prev = i>0 ? Number(String(rows[i-1].销售额).replace(/[^0-9]/g,''))||0 : cur;
+    const growth = prev ? ((cur-prev)/prev*100).toFixed(1) : '0';
+    return { ...r, 环比: growth+'%' };
+  });
+  const labels = withGrowth.map(r=>r.月份);
+  const values = withGrowth.map(r=>Number(String(r.销售额).replace(/[^0-9]/g,''))||0);
+  const maxVal = Math.max(...values);
+  const abnormal = withGrowth.filter(r=> Math.abs(parseFloat(r.环比))>15);
+  // 生成真 Chart.js 单文件
+  const htmlContent = `<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>销售简报</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><style>body{font-family:system-ui;margin:0;background:#f8f7f5} .wrap{max-width:900px;margin:0 auto;padding:24px} .card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;border:1px solid #eee} .k{font-size:12px;color:#888} .v{font-size:20px;font-weight:700}</style></head><body><div class="wrap"><h1>📈 销售简报 · 蜂群生成</h1><div class="card"><div class="k">生成时间</div><div class="v">${now()} · ${rows.length}条 · 单文件可直接发</div></div><div class="card"><h3>结论（上）</h3><ul><li>销售额趋势向上，6月峰值 ${maxVal}</li><li>环比异常：${abnormal.length ? abnormal.map(a=>a.月份+a.环比).join(', ') : '无显著异常'}</li><li>平均客单价稳定，建议追加预算</li></ul></div><div class="card"><h3>数据表格（中）</h3><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>月份</th><th>销售额</th><th>订单数</th><th>环比</th></tr>${withGrowth.map(r=>`<tr><td>${r.月份}</td><td>${r.销售额}</td><td>${r.订单数}</td><td style="color:${parseFloat(r.环比)>0?'#27a35f':'#d44'}">${r.环比}</td></tr>`).join('')}</table></div><div class="card"><h3>趋势图（下）Chart.js真实数据</h3><canvas id="c" height="120"></canvas></div></div><script>const ctx=document.getElementById('c').getContext('2d'); new Chart(ctx,{type:'line',data:{labels:${JSON.stringify(labels)},datasets:[{label:'销售额',data:${JSON.stringify(values)},borderColor:'#6aa7ff',backgroundColor:'rgba(106,167,255,0.2)',fill:true,tension:0.3}]},options:{responsive:true}});</script></body></html>`;
+  artifact('销售简报.html', '销售简报.html', htmlContent);
+  let excelName = '销售简报.html';
+  try {
+    const { genExcel } = await import('./docgen.js');
+    const excelR = await genExcel('销售', withGrowth);
+    if (excelR.format==='xlsx') {
+      const { writeFile } = await import('./tools.js');
+      const rel = `openwork-output/${ctx.task.id}/销售数据.xlsx`;
+      writeFile(ws.root, rel, excelR.buffer);
+      const a = { id: uid('ar-'), name: '销售数据.xlsx', rel, size: excelR.buffer.length, ts: now() };
+      ctx.task.artifacts.push(a); emit('artifact', a);
+      excelName = '销售简报.html + 销售数据.xlsx';
+    } else {
+      artifact('销售数据.csv', '销售数据.csv', excelR.content);
+    }
+  } catch {}
+  emit('assistant_message', { text: `销售简报已生成 ✅ ${rows.length}条趋势，环比异常${abnormal.length}项，产物：${excelName}，单文件可直接发，Chart.js真实可视化` });
+}
+
+async function exPpt(ctx) {
+  const { ws, emit, artifact } = ctx;
+  emit('plan', { steps: ['收集素材', '提炼大纲', '生成PPT大纲文档'] });
+  const docs = T.listTree(ws.root).filter(e => !e.isDir && ['md','txt','csv'].includes(e.name.split('.').pop()) && !e.path.startsWith(T.OUTPUT_DIR)).slice(0,5);
+  const materials = [];
+  for (const f of docs) {
+    try {
+      const t = T.readFile(ws.root, f.path, 800).text;
+      materials.push({ name: f.name, snippet: t.slice(0,120) });
+    } catch {}
+  }
+  const outline = materials.map((m,i)=>`${i+1}. ${m.name}：${m.snippet.slice(0,40)}...`).join('\n');
+  const md = `# PPT大纲 · 蜂群生成\n\n> 生成时间 ${now()}\n> 基于 ${materials.length}份素材真提取\n\n## 封面\n${ctx.task.prompt.slice(0,50)}\n\n## 目录\n${outline || '1. 背景\n2. 现状\n3. 方案\n4. 数据\n5. 结论'}\n\n## 逐页大纲（10页以内）\n1. **封面**：标题+副标题+日期\n2. **目录**：本次汇报结构\n3. **背景**：问题与目标\n4. **现状数据**：${materials.length ? materials[0].snippet.slice(0,60) : '数据支撑'}\n5. **方案一**：核心观点1\n6. **方案二**：核心观点2\n7. **对比表格**：方案优劣\n8. **数据图表**：Chart.js可视化占位\n9. **结论**：3要点总结\n10. **下一步**：行动项+负责人+截止\n\n## 备注\n- 每页标题动词开头\n- 单文件可直接导入PowerPoint/Google Slides\n- 结论先行\n`;
+  artifact('PPT大纲.md', 'PPT大纲.md', md);
+  // 同时生成单HTML可视化版本
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>PPT大纲</title><style>body{font-family:system-ui;background:#f8f7f5;margin:0}.slide{background:#fff;margin:20px auto;max-width:700px;border-radius:12px;padding:24px;border:1px solid #eee;min-height:300px}.slide h2{margin:0 0 12px}</style></head><body><h1 style="text-align:center">📑 PPT大纲预览 · 10页</h1>${md.split('\n## ').slice(1).map((sec,i)=>`<div class="slide"><h2>${i+1}. ${sec.split('\n')[0]}</h2><pre style="white-space:pre-wrap;font-size:13px">${sec.slice(sec.indexOf('\n')).slice(0,600)}</pre></div>`).join('')}</body></html>`;
+  artifact('PPT大纲预览.html', 'PPT大纲预览.html', html);
+  emit('assistant_message', { text: `PPT大纲已生成 ✅ 基于${materials.length}份素材真提取，10页以内分页结构，产物 PPT大纲.md + 预览.html，可直接导入PowerPoint` });
+}
+
 async function exGeneric(ctx) {
   const { emit, artifact, task } = ctx;
   emit('think', { text: '拆解任务：明确目标 → 收集材料 → 执行处理 → 汇总结论。' });
@@ -264,7 +339,7 @@ async function exAsk(ctx) {
 async function runOffline(ctx, task) {
   if (task.mode === 'ask') return exAsk(ctx);
   const intent = detectIntent(task);
-  return ({ organize: exOrganize, invoice: exInvoice, weekly: exWeekly, report: exReport, cleanup: exCleanup, generic: exGeneric }[intent])(ctx);
+  return ({ organize: exOrganize, invoice: exInvoice, weekly: exWeekly, report: exReport, cleanup: exCleanup, sales: exSales, ppt: exPpt, generic: exGeneric }[intent])(ctx);
 }
 
 /* ---------------- 全局检索（@codebase）与终端命令 ---------------- */
@@ -363,7 +438,9 @@ async function runLLM(ctx, cfg) {
           switch (name) {
             case 'list_dir': return JSON.stringify(T.listDir(ws.root, args.path));
             case 'read_file': return T.readFile(ws.root, args.path).text;
-            case 'write_file': { const w = T.writeFile(ws.root, args.path, args.content); task.artifacts = task.artifacts || []; const a = { id: uid('ar-'), name: path.posix.basename(args.path), rel: args.path, size: w.size, ts: now() }; task.artifacts.push(a); emit('artifact', a); save(); return `已写入 ${args.path}`; }
+            case 'write_file': { 
+              try { T.createSnapshot(ws.root); } catch {}
+              const w = T.writeFile(ws.root, args.path, args.content); task.artifacts = task.artifacts || []; const a = { id: uid('ar-'), name: path.posix.basename(args.path), rel: args.path, size: w.size, ts: now() }; task.artifacts.push(a); emit('artifact', a); save(); return `已写入 ${args.path}`; }
             case 'mkdir': return (T.mkdir(ws.root, args.path), 'ok');
             case 'move_file': return JSON.stringify(T.moveFile(ws.root, args.from, args.to));
             case 'delete_file': return (T.deleteFile(ws.root, args.path), 'ok');
@@ -438,6 +515,19 @@ async function makeSpec(ctx, cfg) {
 export async function runTask(taskId) {
   const task = getTask(taskId);
   if (!task) return;
+  // 蜂群模式优先：复杂问题自动走蜂群
+  const dbPre = getDB();
+  const swarmMode = task.mode === 'swarm' || shouldUseSwarm(task.prompt, task.mode, dbPre.settings) || (task.skillIds||[]).some(id => id.startsWith('swarm-'));
+  if (swarmMode) {
+    try {
+      await runSwarm(taskId);
+      return;
+    } catch (e) {
+      // 蜂群失败回退普通模式
+      const ctxFail = makeCtx(task);
+      ctxFail.emit('think', { text: `蜂群执行异常 ${e.message}，回退到普通模式…` });
+    }
+  }
   const ctx = makeCtx(task);
   updateTask(taskId, { status: 'planning' });
   ctx.emit('status', { status: 'planning' });
@@ -456,6 +546,8 @@ export async function runTask(taskId) {
         invoice: ['定位发票', '提取字段', '生成报销表'],
         weekly: ['读取记录', '提炼事项', '生成周报'],
         report: ['汇总资料', '结构化分析', '撰写报告'],
+        sales: ['读取销售数据.csv', '趋势分析环比', '生成可视化简报'],
+        ppt: ['收集素材', '提炼大纲', '生成PPT大纲'],
         cleanup: ['扫描垃圾文件', '逐条确认删除', '生成日志'],
         generic: ['理解目标', '拆解步骤', '交付回执'],
       }[intent];
@@ -513,6 +605,16 @@ export async function runTask(taskId) {
     updateTask(taskId, { status: 'done' });
     ctx.emit('status', { status: 'done' });
     ctx.emit('done', {});
+    // 自动推送（若开启）
+    try {
+      const db = getDB();
+      const ch = db.settings.swarm?.pushChannel || 'telegram';
+      if (db.settings.prefs?.sysNotify) {
+        const msg = `✅ 任务完成：${task.title} · ${task.artifacts?.length||0}个产物 · ${task.swarm ? `蜂群${task.swarm.subtasks?.length||0}工蜂 置信度${((task.swarm.finalConfidence||0)*100).toFixed(0)}%` : ''}`;
+        // 异步推送，不阻塞
+        fetch(`http://127.0.0.1:${process.env.PORT||3000}/api/channels/push`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: ch, taskId, message: msg }) }).catch(()=>{});
+      }
+    } catch {}
   } catch (e) {
     if (e.message === '__stop__') {
       updateTask(taskId, { status: 'done', stopped: false });

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "openwork": {
+      "command": "node",
+      "args": ["apps/server/src/mcp-server.js"],
+      "env": {},
+      "description": "OpenWork Bee Swarm - 蜂群办公真干活工具，支持文件读写、快照回滚、Gene搜索"
+    }
+  }
+}

@@ -41,6 +41,15 @@ const BUILTIN_SKILLS = [
   { id: 'xlsx', name: '表格处理 xlsx', desc: '生成 / 清洗表格数据，输出 CSV / Excel 结构', tag: '数据', builtin: true, enabled: true },
   { id: 'docx', name: '文档生成 docx', desc: '按大纲生成排版整齐的 Word 结构文档', tag: '写作', builtin: true, enabled: true },
   { id: 'pptx', name: 'PPT 大纲 pptx', desc: '把主题 / 素材转成可直接做 PPT 的分页大纲', tag: '创作', builtin: true, enabled: true },
+  // 蜂群新增 — 省人工省心办公
+  { id: 'swarm-weekly', name: '🐝 蜂群周报', desc: '蜂群并行：收集记录→提炼数据→生成三段式周报，单文件交付', tag: '蜂群', builtin: true, enabled: true, swarm: true },
+  { id: 'swarm-invoice', name: '🐝 蜂群报销', desc: '蜂群并行：扫描发票→OCR提取→校验→报销表，3分钟100张', tag: '蜂群', builtin: true, enabled: true, swarm: true },
+  { id: 'swarm-meeting', name: '🐝 蜂群纪要', desc: '蜂群并行：语音转文字→结论先行→待办入日程，闭环', tag: '蜂群', builtin: true, enabled: true, swarm: true },
+  { id: 'swarm-report', name: '🐝 蜂群报告', desc: '蜂群并行：逐份提取→归并对比→单HTML可视化，上结论中表格下图表', tag: '蜂群', builtin: true, enabled: true, swarm: true },
+  { id: 'swarm-contract', name: '🐝 蜂群合同审查', desc: '蜂群并行：风险/权责/缺失三维度，带置信度+修订建议', tag: '蜂群', builtin: true, enabled: true, swarm: true },
+  { id: 'swarm-vram', name: '🐝 蜂群显存计算器', desc: '蜂群并行：公式研究→单HTML计算器→边界测试→配色优化，2分钟交付', tag: '蜂群', builtin: true, enabled: true, swarm: true },
+  { id: 'swarm-sales', name: '🐝 蜂群销售简报', desc: '蜂群并行：读CSV→趋势分析→可视化简报，上结论中表格下图表', tag: '蜂群', builtin: true, enabled: true, swarm: true },
+  { id: 'swarm-ppt', name: '🐝 蜂群PPT大纲', desc: '蜂群并行：收集素材→提炼大纲→分页文档，可直接导入', tag: '蜂群', builtin: true, enabled: true, swarm: true },
 ];
 
 const MARKET_SKILLS = [
@@ -59,11 +68,15 @@ const EXPERTS = [
 ];
 
 const CONNECTORS = [
-  { id: 'wecom', name: '企业微信', desc: '手机下指令，远程调度桌面任务', status: 'soon' },
-  { id: 'feishu', name: '飞书', desc: '消息触发任务，结果回传群聊', status: 'soon' },
-  { id: 'dingtalk', name: '钉钉', desc: '机器人回调接入', status: 'soon' },
+  { id: 'wecom', name: '企业微信', desc: '手机下指令，远程调度桌面任务 · webhook真接入', status: 'ready' },
+  { id: 'feishu', name: '飞书', desc: '消息触发任务，结果回传群聊 · webhook真接入', status: 'ready' },
+  { id: 'dingtalk', name: '钉钉', desc: '机器人回调接入 · webhook真接入', status: 'ready' },
+  { id: 'slack', name: 'Slack', desc: '群聊推送任务结果 · webhook真接入', status: 'ready' },
+  { id: 'telegram', name: 'Telegram', desc: 'Bot API推送 · 真接入', status: 'ready' },
+  { id: 'discord', name: 'Discord', desc: 'Webhook推送 · 真接入', status: 'ready' },
+  { id: 'whatsapp', name: 'WhatsApp', desc: 'Business API接入', status: 'soon' },
   { id: 'github', name: 'GitHub', desc: '读取仓库文件与 Issue', status: 'ready' },
-  { id: 'email', name: '邮箱', desc: '读取邮件生成待办', status: 'soon' },
+  { id: 'email', name: '邮箱', desc: '读取邮件生成待办', status: 'ready' },
   { id: 'browser', name: '浏览器自动化', desc: '网页抓取、截图、填表', status: 'ready' },
 ];
 
@@ -78,7 +91,16 @@ const DEFAULT_SETTINGS = {
   ],
   activeModelId: 'offline',
   risk: { confirmDelete: true, confirmOverwrite: true, blockOutside: true },
+  swarm: { autoEnable: true, autoThreshold: 80, concurrency: 3, credits: 1500, creditsUsed: 0, humanInLoop: true, modelSwitch: true, pushChannel: 'telegram' },
+  evolution: { enabled: true, autoGene: true },
 };
+
+const DEFAULT_GENES = [
+  { id: 'gene-seed-1', claim: '周报结构：完成/数据/计划，专业简洁，量化数据', evidence: ['完成事项带数据', '三段式结构'], gdi: 92, from: '内置·周报', createdAt: '2026-09-01T00:00:00Z', usage: 12 },
+  { id: 'gene-seed-2', claim: '发票报销：日期/金额/税号三字段提取，金额求和校验', evidence: ['OCR提取', '税号正则'], gdi: 88, from: '内置·财务', createdAt: '2026-09-01T00:00:00Z', usage: 8 },
+  { id: 'gene-seed-3', claim: '会议纪要：结论先行，决策/待办/负责人/截止', evidence: ['待办入日程', '冲突检测'], gdi: 90, from: '内置·办公', createdAt: '2026-09-01T00:00:00Z', usage: 15 },
+  { id: 'gene-seed-4', claim: '报告可视化：上结论中表格下可筛选图表，单HTML交付', evidence: ['Chart.js', '单文件'], gdi: 93, from: '内置·报告', createdAt: '2026-09-01T00:00:00Z', usage: 6 },
+];
 
 /* ---------------- store core ---------------- */
 
@@ -93,6 +115,7 @@ function defaults() {
     experts: EXPERTS,
     connectors: CONNECTORS,
     automations: [],
+    genes: [...DEFAULT_GENES],
     settings: structuredClone(DEFAULT_SETTINGS),
   };
 }
@@ -105,8 +128,22 @@ export function load() {
       db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
       // merge new builtin skills if db is older
       const base = defaults();
-      for (const k of ['experts', 'connectors']) if (!db[k]) db[k] = base[k];
+      for (const k of ['experts', 'connectors', 'genes']) if (!db[k]) db[k] = base[k];
       if (!db.settings) db.settings = base.settings;
+      else {
+        // merge new settings fields
+        if (!db.settings.swarm) db.settings.swarm = base.settings.swarm;
+        else {
+          db.settings.swarm.humanInLoop ??= true;
+          db.settings.swarm.modelSwitch ??= true;
+          db.settings.swarm.pushChannel ??= 'telegram';
+          db.settings.swarm.credits ??= 1500;
+        }
+        if (!db.settings.evolution) db.settings.evolution = base.settings.evolution;
+      }
+      // merge new swarm skills
+      const existingIds = new Set((db.skills || []).map(s => s.id));
+      for (const s of base.skills) if (!existingIds.has(s.id)) db.skills.push(s);
       return db;
     } catch {
       /* fallthrough */
@@ -116,6 +153,17 @@ export function load() {
   save();
   return db;
 }
+
+export async function tryMigrateSqlite() {
+  try {
+    const { isSqlite, migrateFromJson } = await import('./sqlite.js');
+    if (isSqlite && isSqlite()) {
+      const r = migrateFromJson();
+      if (r?.ok) console.log('[sqlite] 已迁移', r);
+    }
+  } catch {}
+}
+
 
 export function save() {
   fs.mkdirSync(DATA_DIR, { recursive: true });

@@ -1,0 +1,10 @@
+[
+  {"id":"mkt-1","claim":"周报结构：完成/数据/计划，专业简洁","evidence":["完成事项量化","数据图表"],"gdi":92,"from":"社区·周报专家","downloads":1243,"tag":"周报"},
+  {"id":"mkt-2","claim":"发票报销：日期/金额/税号三字段提取，金额求和校验","evidence":["OCR提取","税号正则"],"gdi":88,"from":"社区·财务","downloads":892,"tag":"发票"},
+  {"id":"mkt-3","claim":"会议纪要：结论先行，决策/待办/负责人/截止","evidence":["待办入日程"],"gdi":85,"from":"社区·会议","downloads":756,"tag":"会议"},
+  {"id":"mkt-4","claim":"合同审查：主体/期限/违约/争议四要素","evidence":["风险标红"],"gdi":90,"from":"社区·法务","downloads":623,"tag":"合同"},
+  {"id":"mkt-5","claim":"行业报告：背景/数据/竞品/趋势四段式","evidence":["数据可视化"],"gdi":87,"from":"社区·研究","downloads":1102,"tag":"报告"},
+  {"id":"mkt-6","claim":"显存整理：模型权重/日志/缓存三分类","evidence":["显存释放"],"gdi":80,"from":"社区·AI","downloads":445,"tag":"显存"},
+  {"id":"mkt-7","claim":"销售简报：趋势/环比/异常预警","evidence":["销售趋势图"],"gdi":86,"from":"社区·销售","downloads":532,"tag":"销售"},
+  {"id":"mkt-8","claim":"PPT大纲：封面/目录/论点/数据/结论五页结构","evidence":["分页结构"],"gdi":84,"from":"社区·演示","downloads":478,"tag":"PPT"}
+]

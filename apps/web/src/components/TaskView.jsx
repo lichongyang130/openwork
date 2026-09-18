@@ -5,8 +5,10 @@ import RightPanel, { PreviewInner } from './RightPanel.jsx';
 import InputCard from './InputCard.jsx';
 import { STATUS } from './Sidebar.jsx';
 import { IcPanel, IcTrash } from '../icons.jsx';
+import SwarmView from './SwarmView.jsx';
+import DagView from './DagView.jsx';
 
-const MODE_NAME = { ask: 'Ask 问一问', plan: 'Plan 想一想', craft: 'Craft 做一做' };
+const MODE_NAME = { ask: 'Ask 问一问', plan: 'Plan 想一想', craft: 'Craft 做一做', swarm: '🐝 Swarm 蜂群' };
 
 /** 服务端出站受限时，由浏览器代调模型接口并把结果回传 */
 function relayLLM({ relayId, url, apiKey, payload }) {
@@ -37,12 +39,16 @@ function applyEvent(list, ev) {
     return list.map((e) => (e.kind === 'approval' && e.payload.approvalId === ev.payload.approvalId ? { ...e, payload: { ...e.payload, status: ev.payload.status } } : e));
   }
   if (ev.kind === 'status' || ev.kind === 'done') return list;
+  // 蜂群事件：也加入历史，便于UI
+  if (ev.kind?.startsWith('swarm_')) return [...list, ev];
   return [...list, ev];
 }
 
 export default function TaskView({ S, id, setView, refresh }) {
   const [task, setTask] = useState(null);
-  const [panel, setPanel] = useState(true);
+  const [panel, setPanel] = useState(true); // 右侧预览默认开启，按需求强制开启
+  // 强制开启右侧预览
+  useEffect(() => { setPanel(true); }, [id]);
   const [preview, setPreview] = useState(null);
   const [distilled, setDistilled] = useState(false);
   const [dToast, setDToast] = useState('');
@@ -68,6 +74,21 @@ export default function TaskView({ S, id, setView, refresh }) {
           const next = { ...cur, events: applyEvent(cur.events, ev) };
           if (ev.kind === 'status') next.status = ev.payload.status;
           if (ev.kind === 'artifact') next.artifacts = [...(cur.artifacts || []), ev.payload];
+          // 蜂群实时更新
+          if (ev.kind === 'swarm_start') { next.swarm = { ...(next.swarm||{}), subtasks: ev.payload.subtasks, status: 'running' }; }
+          if (ev.kind === 'swarm_bee_start') {
+            const st = next.swarm?.subtasks || [];
+            const idx = st.findIndex(s => s.id === ev.payload.subtaskId);
+            if (idx >= 0) st[idx].status = 'running';
+          }
+          if (ev.kind === 'swarm_bee_done' || ev.kind === 'swarm_bee_update') {
+            const st = next.swarm?.subtasks || [];
+            const idx = st.findIndex(s => s.id === ev.payload.subtaskId);
+            if (idx >= 0) { st[idx].status = ev.payload.status || 'done'; st[idx].confidence = ev.payload.confidence ?? st[idx].confidence; }
+          }
+          if (ev.kind === 'swarm_pollen') {
+            next.swarm = { ...(next.swarm||{}), pollen: [...(next.swarm?.pollen||[]), ev.payload.pollen] };
+          }
           return next;
         });
       };
@@ -84,11 +105,14 @@ export default function TaskView({ S, id, setView, refresh }) {
   const ws = (S?.workspaces || []).find((w) => w.id === task.workspaceId);
   const busy = ['running', 'planning', 'waiting'].includes(task.status);
 
+  const isSwarm = task.mode === 'swarm' || task.swarm;
+
   return (
     <>
       <div className="topbar">
         <span className="title">{task.title}</span>
         {task.mode === 'spec' && <span className="badge-green" style={{ marginLeft: 8, fontSize: 11 }}>规范驱动</span>}
+        {isSwarm && <span className="badge-green" style={{ marginLeft: 8, fontSize: 11, background: '#fff3c0', color: '#8a6d00' }}>🐝 蜂群 {task.swarm?.subtasks?.length || ''} 工蜂</span>}
         <span className="sp" />
         {task.status === 'done' && task.mode !== 'ask' && (
           <button className="btn-outline" style={{ fontSize: 12.5, padding: '6px 12px', marginRight: 8 }} disabled={distilled} onClick={async () => {
@@ -96,10 +120,17 @@ export default function TaskView({ S, id, setView, refresh }) {
             if (s?.id) { setDistilled(true); setDToast(`已沉淀为技能「${s.name}」，可在技能库复用`); setTimeout(() => setDToast(''), 2400); refresh(); }
           }}>{distilled ? '✓ 已沉淀为技能' : '沉淀为技能'}</button>
         )}
-        <button className={`iconbtn ${panel ? 'on' : ''}`} title="结果区" onClick={() => setPanel(!panel)}><IcPanel size={16} /></button>
+        <button className={`iconbtn on`} title="右侧预览已开启（按需求常驻）" onClick={() => setPanel(true)}><IcPanel size={16} /></button>
         <button className="iconbtn" title="删除任务" onClick={async () => { if (confirm('删除该任务？')) { await api.deleteTask(id); refresh(); setView({ type: 'home' }); } }}><IcTrash size={15} /></button>
       </div>
       {dToast && <div className="toast-pill">{dToast}</div>}
+
+      {isSwarm && (
+        <>
+          <SwarmView task={task} />
+          <div style={{ padding: '8px 16px' }}><DagView taskId={task.id} /></div>
+        </>
+      )}
 
       <div className="taskwrap">
         <div className="conv">
@@ -118,7 +149,7 @@ export default function TaskView({ S, id, setView, refresh }) {
             />
           </div>
         </div>
-        {panel && <RightPanel task={{ ...task, _ws: ws }} />}
+        <RightPanel task={{ ...task, _ws: ws }} />
       </div>
       {preview && <PreviewInner task={task} artifact={preview} onClose={() => setPreview(null)} />}
     </>

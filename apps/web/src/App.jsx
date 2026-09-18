@@ -5,6 +5,9 @@ import Home from './components/Home.jsx';
 import TaskView from './components/TaskView.jsx';
 import { EskPage, AssistantPage, ProjectsPage, AutomationPage, LibraryPage, InspirationPage } from './components/Pages.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
+import SwarmLab from './components/SwarmLab.jsx';
+import GeneMarket from './components/GeneMarket.jsx';
+import DashboardPage from './components/DashboardPage.jsx';
 
 export default function App() {
   const [S, setS] = useState(null);
@@ -35,6 +38,9 @@ export default function App() {
         {view.type === 'automation' && <AutomationPage S={S} refresh={refresh} setView={setView} />}
         {view.type === 'library' && <LibraryPage S={S} setView={setView} />}
         {view.type === 'inspiration' && <InspirationPage S={S} setView={setView} refresh={refresh} />}
+        {view.type === 'swarm-lab' && <SwarmLab S={S} setView={setView} refresh={refresh} />}
+        {view.type === 'dashboard' && <DashboardPage S={S} />}
+        {view.type === 'gene-market' && <GeneMarket S={S} refresh={refresh} />}
       </main>
       {settingsOpen && <SettingsModal S={S} onClose={() => setSettingsOpen(false)} refresh={refresh} initialPage={settingsInit} />}
     </div>
